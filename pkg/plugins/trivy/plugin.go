@@ -80,10 +80,12 @@ const (
 	keyTrivyServerToken         = "trivy.serverToken"
 	keyTrivyServerCustomHeaders = "trivy.serverCustomHeaders"
 
-	keyResourcesRequestsCPU    = "trivy.resources.requests.cpu"
-	keyResourcesRequestsMemory = "trivy.resources.requests.memory"
-	keyResourcesLimitsCPU      = "trivy.resources.limits.cpu"
-	keyResourcesLimitsMemory   = "trivy.resources.limits.memory"
+	keyResourcesRequestsCPU              = "trivy.resources.requests.cpu"
+	keyResourcesRequestsMemory           = "trivy.resources.requests.memory"
+	keyResourcesRequestsEphemeralStorage = "trivy.resources.requests.ephemeral-storage"
+	keyResourcesLimitsCPU                = "trivy.resources.limits.cpu"
+	keyResourcesLimitsMemory             = "trivy.resources.limits.memory"
+	keyResourcesLimitsEphemeralStorage   = "trivy.resources.limits.ephemeral-storage"
 )
 
 const (
@@ -414,6 +416,10 @@ func (c Config) GetResourceRequirements() (corev1.ResourceRequirements, error) {
 	if err != nil {
 		return requirements, err
 	}
+	err = c.setResourceLimit(keyResourcesRequestsEphemeralStorage, &requirements.Requests, corev1.ResourceEphemeralStorage)
+	if err != nil {
+		return requirements, err
+	}
 
 	err = c.setResourceLimit(keyResourcesLimitsCPU, &requirements.Limits, corev1.ResourceCPU)
 	if err != nil {
@@ -421,6 +427,11 @@ func (c Config) GetResourceRequirements() (corev1.ResourceRequirements, error) {
 	}
 
 	err = c.setResourceLimit(keyResourcesLimitsMemory, &requirements.Limits, corev1.ResourceMemory)
+	if err != nil {
+		return requirements, err
+	}
+
+	err = c.setResourceLimit(keyResourcesLimitsEphemeralStorage, &requirements.Limits, corev1.ResourceEphemeralStorage)
 	if err != nil {
 		return requirements, err
 	}
@@ -483,19 +494,21 @@ func NewTrivyConfigAuditPlugin(clock ext.Clock, idGenerator ext.IDGenerator, obj
 func (p *plugin) Init(ctx trivyoperator.PluginContext) error {
 	return ctx.EnsureConfig(trivyoperator.PluginConfig{
 		Data: map[string]string{
-			keyTrivyImageRepository:           DefaultImageRepository,
-			keyTrivyImageTag:                  "0.35.0",
-			KeyTrivySeverity:                  DefaultSeverity,
-			keyTrivySlow:                      "true",
-			keyTrivyMode:                      string(Standalone),
-			keyTrivyTimeout:                   "5m0s",
-			keyTrivyDBRepository:              DefaultDBRepository,
-			keyTrivyUseBuiltinRegoPolicies:    "true",
-			keyTrivySupportedConfigAuditKinds: SupportedConfigAuditKinds,
-			keyResourcesRequestsCPU:           "100m",
-			keyResourcesRequestsMemory:        "100M",
-			keyResourcesLimitsCPU:             "500m",
-			keyResourcesLimitsMemory:          "500M",
+			keyTrivyImageRepository:              DefaultImageRepository,
+			keyTrivyImageTag:                     "0.35.0",
+			KeyTrivySeverity:                     DefaultSeverity,
+			keyTrivySlow:                         "true",
+			keyTrivyMode:                         string(Standalone),
+			keyTrivyTimeout:                      "5m0s",
+			keyTrivyDBRepository:                 DefaultDBRepository,
+			keyTrivyUseBuiltinRegoPolicies:       "true",
+			keyTrivySupportedConfigAuditKinds:    SupportedConfigAuditKinds,
+			keyResourcesRequestsCPU:              "100m",
+			keyResourcesRequestsMemory:           "100M",
+			keyResourcesRequestsEphemeralStorage: "",
+			keyResourcesLimitsCPU:                "500m",
+			keyResourcesLimitsMemory:             "500M",
+			keyResourcesLimitsEphemeralStorage:   "",
 		},
 	})
 }
